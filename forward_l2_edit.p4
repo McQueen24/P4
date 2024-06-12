@@ -14,7 +14,7 @@ const bit<8>  TYPE_TCP = 6;
 const int IPV4_HOST_SIZE = 65536;
 const int IPV4_LPM_SIZE  = 12288;
 
-#define BLOOM_FILTER_ENTRIES 32 //4096
+#define BLOOM_FILTER_ENTRIES 4096
 #define BLOOM_FILTER_BIT_WIDTH 1
 
 /*typedef bit<9> egressSpec_t;
@@ -94,6 +94,7 @@ struct my_ingress_metadata_t {
     user_metadata_t md;
     bit<32> hash_result1;
     bit<1> bloom_read_1;
+    bit<1> bloom_read_2;
 }
 
     /***********************  P A R S E R  **************************/
@@ -154,7 +155,8 @@ control Ingress(
     inout ingress_intrinsic_metadata_for_tm_t        ig_tm_md)
 {
 
-    Register<bit<BLOOM_FILTER_BIT_WIDTH>, bit<BLOOM_FILTER_ENTRIES>>(32w32) bloom_filter_1;
+    // Register<bit<BLOOM_FILTER_BIT_WIDTH>, bit<BLOOM_FILTER_ENTRIES>>(32w4096) bloom_filter_1;
+    Register<bit<BLOOM_FILTER_BIT_WIDTH>,_>(32w4096) bloom_filter_1;
     Register<bit<BLOOM_FILTER_BIT_WIDTH>,_>(BLOOM_FILTER_ENTRIES) bloom_filter_2;
     bit<32> reg_pos_one; bit<32> reg_pos_two;
     bit<1> reg_val_one; bit<1> reg_val_two;
@@ -179,27 +181,58 @@ control Ingress(
     };
 
 
-    @name(".bloom_filter2_get") RegisterAction<bit<1>, _, bit<1>>(bloom_filter_2) bloom_filter2_get = {
+    @name(".bloom_filter2_get") RegisterAction<bit<1>,bit<32>, bit<1>>(bloom_filter_2) bloom_filter2_get = {
         void apply(inout bit<1> value, out bit<1> ret) {
             ret = value;
         }
     };
 
-    @name(".bloom_filter2_set") RegisterAction<bit<1>, _, bit<1>>(bloom_filter_2) bloom_filter2_set = {
-       void apply(inout bit<1> value) {
+    @name(".bloom_filter2_set") RegisterAction<bit<1>,bit<32>, bit<1>>(bloom_filter_2) bloom_filter2_set = {
+       void apply(inout bit<1> value, out bit<1> ret) {
             value = 1;
+            ret = 0;
         }
     };
 
-    action set_bloom_1_a() {
-           bloom_filter1_set.execute(1);
-    //       bloom_filter1_set.execute(hash_10.get({hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort, hdr.ipv4.protocol }));
-    }
+    // action set_bloom_1_a() {
+    // //       bloom_filter1_set.execute(1);
 
-    // action get_bloom_1_a() {
-    //        meta.bloom_read_1 = bloom_filter1_get.execute(hash_11.get({hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort, hdr.ipv4.protocol }));
+    //         bit<32> temp_s_1 = (bit<32>)(hash_10.get({  hdr.ipv4.srcAddr,
+    //                                                 hdr.ipv4.dstAddr,
+    //                                                 hdr.tcp.srcPort,
+    //                                                 hdr.tcp.dstPort,
+    //                                                 hdr.ipv4.protocol })[11:0]);
+    //         bloom_filter1_set.execute(temp_s_1);
     // }
 
+    // action set_bloom_2_a() {
+    //         bit<32> temp_s_2 = (bit<32>)(hash_20.get({  hdr.ipv4.srcAddr,
+    //                                                 hdr.ipv4.dstAddr,
+    //                                                 hdr.tcp.srcPort,
+    //                                                 hdr.tcp.dstPort,
+    //                                                 hdr.ipv4.protocol })[11:0]);
+    //         bloom_filter2_set.execute(temp_s_2);
+    // }
+    // action get_bloom_1_a() {
+    //        bit<32> temp_g_1 = (bit<32>)(hash_11.get({   hdr.ipv4.dstAddr,
+    //                                                     hdr.ipv4.srcAddr,
+    //                                                     hdr.tcp.dstPort,
+    //                                                     hdr.tcp.srcPort,
+    //                                                     hdr.ipv4.protocol })[11:0]);
+    //         //reg_val_one = bloom_filter1_get.execute(temp_g_1);
+    //        meta.bloom_read_1 = bloom_filter1_get.execute(temp_g_1);
+    //        // reg_val_one = meta.bloom_read_1;
+    //        //meta.bloom_read_1 = bloom_filter1_get.execute(hash_11.get({hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort, hdr.ipv4.protocol }));
+    // }
+
+    // action get_bloom_2_a() {
+    //        bit<32> temp_g_2 = (bit<32>)(hash_21.get({   hdr.ipv4.dstAddr,
+    //                                                     hdr.ipv4.srcAddr,
+    //                                                     hdr.tcp.dstPort,
+    //                                                     hdr.tcp.srcPort,
+    //                                                     hdr.ipv4.protocol })[11:0]);
+    //        meta.bloom_read_2 = bloom_filter2_get.execute(temp_g_2);
+    // }
 /*
     action send_l2(PortId_t port) {
         ig_tm_md.ucast_egress_port = port;
@@ -255,11 +288,8 @@ control Ingress(
 
     apply {
         if (hdr.ipv4.isValid()) {
-        // bit<12> test = 1;
-        // bloom_filter1_set.execute(test);
-        // bloom_filter1_set.execute(12w1);
 
-             set_bloom_1_a();
+             //set_bloom_1_a();
 
              ipv4_lpm.apply();
              if (hdr.ipv4.ttl > 0) {
@@ -286,8 +316,12 @@ control Ingress(
                             if (hdr.ipv4.ttl > 0) {
                                 hdr.ipv4.ttl = 11;
                             }
-                            //bloom_filter1_set.execute(hash_10.get({hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort, hdr.ipv4.protocol }));
-                            bloom_filter2_set.execute(hash_20.get({hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort, hdr.ipv4.protocol }));
+                            //set_bloom_1_a();
+                            //set_bloom_2_a();
+                            bit<32> temp10 = (bit<32>)(hash_10.get({hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort, hdr.ipv4.protocol })[11:0]);
+                            bit<32> temp20 = (bit<32>)(hash_20.get({hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort, hdr.ipv4.protocol })[11:0]);
+                            bloom_filter1_set.execute(temp10);
+                            bloom_filter2_set.execute(temp20);
                         }
                     }
 
@@ -296,12 +330,26 @@ control Ingress(
                     else if (direction == 1) {
 
                         // Read bloom filters to check for 1's
-                        //reg_val_one = bloom_filter1_get.execute(hash_11.get({hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort, hdr.ipv4.protocol }));
-                        reg_val_two = bloom_filter2_get.execute(hash_21.get({hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort, hdr.ipv4.protocol }));
+                        //get_bloom_1_a();
+                        //get_bloom_2_a();
+                        bit<32> temp11 = (bit<32>)(hash_11.get({hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort, hdr.ipv4.protocol })[11:0]);
+                        bit<32> temp21 = (bit<32>)(hash_21.get({hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort, hdr.ipv4.protocol })[11:0]);
+                        meta.bloom_read_1 = bloom_filter1_get.execute(temp11);
+                        meta.bloom_read_2 = bloom_filter2_get.execute(temp21);
 
-                        // allow only if both entries are set
-                        if (reg_val_one != 1 || reg_val_two !=1) {
-                            drop();
+                        // // allow only if both entries are set
+                        // if (reg_val_one != 1 || reg_val_two !=1) {
+                        //     drop();
+                        // }
+
+                        if (meta.bloom_read_1 != 1 || meta.bloom_read_2 != 1) { // test with ttl change
+                            if (hdr.ipv4.ttl > 0) {
+                               hdr.ipv4.ttl = 8;
+                            }
+                        } else {
+                            if (hdr.ipv4.ttl > 0) {
+                               hdr.ipv4.ttl = 18;
+                            }
                         }
                     }
                 } else {
