@@ -92,7 +92,6 @@ struct my_ingress_headers_t {
 
 struct my_ingress_metadata_t {
     user_metadata_t md;
-    bit<32> hash_result1;
     bit<1> bloom_read_1;
     bit<1> bloom_read_2;
 }
@@ -134,9 +133,6 @@ parser IngressParser(packet_in        pkt,
 
     state parse_tcp {
         pkt.extract(hdr.tcp);
-        // tcp_checksum.subtract({hdr.tcp.checksum});
-        // tcp_checksum.subtract({hdr.tcp.ttl});
-        // meta.checksum_tcp_tmp = tcp_checksum.get();
         transition accept;
     }
 
@@ -155,10 +151,8 @@ control Ingress(
     inout ingress_intrinsic_metadata_for_tm_t        ig_tm_md)
 {
 
-    // Register<bit<BLOOM_FILTER_BIT_WIDTH>, bit<BLOOM_FILTER_ENTRIES>>(32w4096) bloom_filter_1;
-    Register<bit<BLOOM_FILTER_BIT_WIDTH>,_>(32w4096) bloom_filter_1;
+    Register<bit<BLOOM_FILTER_BIT_WIDTH>,_>(32w4096) bloom_filter_1; // WIDTH, DC, LENGTH, NAME
     Register<bit<BLOOM_FILTER_BIT_WIDTH>,_>(BLOOM_FILTER_ENTRIES) bloom_filter_2;
-    bit<32> reg_pos_one; bit<32> reg_pos_two;
     bit<1> reg_val_one; bit<1> reg_val_two;
     bit<1> direction;
 
@@ -233,11 +227,7 @@ control Ingress(
     //                                                     hdr.ipv4.protocol })[11:0]);
     //        meta.bloom_read_2 = bloom_filter2_get.execute(temp_g_2);
     // }
-/*
-    action send_l2(PortId_t port) {
-        ig_tm_md.ucast_egress_port = port;
-    }
-*/
+
     action drop() {
         ig_dprsr_md.drop_ctl = 1;
     }
@@ -245,9 +235,6 @@ control Ingress(
     action ipv4_forward(macAddr_t dstMac, PortId_t port) {
         hdr.ethernet.dstAddr = dstMac;
         ig_tm_md.ucast_egress_port = port;
-        // if (hdr.ipv4.ttl > 0) {
-        //    hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
-        // }
         // ip4Addr_t temp = hdr.ipv4.srcAddr;
         // hdr.ipv4.srcAddr = hdr.ipv4.dstAddr;
         // hdr.ipv4.dstAddr = temp;
@@ -257,14 +244,6 @@ control Ingress(
         direction = dir;
     }
 
-/*
-    table forward_l2 {
-        key     = { hdr.ethernet.dstAddr : exact; }
-        actions = { send_l2; drop; }
-        default_action = send_l2(17);
-        size           = IPV4_LPM_SIZE;
-    }
-*/
     table ipv4_lpm {
         key     =  { hdr.ipv4.dstAddr : exact; }
         actions =  { ipv4_forward; drop; NoAction; }
@@ -285,39 +264,25 @@ control Ingress(
         size = 1024;
     }
 
-
     apply {
         if (hdr.ipv4.isValid()) {
-
-             //set_bloom_1_a();
-
              ipv4_lpm.apply();
+
              if (hdr.ipv4.ttl > 0) {
-                // hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
-                hdr.ipv4.ttl = 33;
+                hdr.ipv4.ttl = hdr.ipv4.ttl - 1; // decrease TTL
              }
 
              if (hdr.tcp.isValid()) {
 
-                //direction = 0; // default
-
                 if (check_ports.apply().hit) {
-
-                    if (hdr.ipv4.ttl > 0) { // for testing
-                       hdr.ipv4.ttl = 22;
-                    }
 
                     // Packet comes from internal network
                     if (direction == 0) {
 
                         // if syn update bloom filter and add entry
                         if (hdr.tcp.syn == 1) {
-
-                            if (hdr.ipv4.ttl > 0) {
-                                hdr.ipv4.ttl = 11;
-                            }
-                            //set_bloom_1_a();
-                            //set_bloom_2_a();
+                            //set_bloom_1_a(); // actions probably has to be called through a table
+                            //set_bloom_2_a(); // --||--
                             bit<32> temp10 = (bit<32>)(hash_10.get({hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort, hdr.ipv4.protocol })[11:0]);
                             bit<32> temp20 = (bit<32>)(hash_20.get({hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort, hdr.ipv4.protocol })[11:0]);
                             bloom_filter1_set.execute(temp10);
@@ -325,45 +290,28 @@ control Ingress(
                         }
                     }
 
-
                     // Packet comes from outside
                     else if (direction == 1) {
 
                         // Read bloom filters to check for 1's
-                        //get_bloom_1_a();
-                        //get_bloom_2_a();
+                        //get_bloom_1_a(); // actions probably has to be called from table
+                        //get_bloom_2_a(); // --||--
                         bit<32> temp11 = (bit<32>)(hash_11.get({hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort, hdr.ipv4.protocol })[11:0]);
                         bit<32> temp21 = (bit<32>)(hash_21.get({hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort, hdr.ipv4.protocol })[11:0]);
                         meta.bloom_read_1 = bloom_filter1_get.execute(temp11);
                         meta.bloom_read_2 = bloom_filter2_get.execute(temp21);
 
-                        // // allow only if both entries are set
-                        // if (reg_val_one != 1 || reg_val_two !=1) {
-                        //     drop();
-                        // }
 
-                        if (meta.bloom_read_1 != 1 || meta.bloom_read_2 != 1) { // test with ttl change
-                            if (hdr.ipv4.ttl > 0) {
-                               hdr.ipv4.ttl = 8;
-                            }
-                        } else {
-                            if (hdr.ipv4.ttl > 0) {
-                               hdr.ipv4.ttl = 18;
-                            }
+                        if (meta.bloom_read_1 != 1 || meta.bloom_read_2 != 1) {
+                            drop(); // drop packet if value hash index != 1
                         }
                     }
                 } else {
-                  drop();
+                  drop(); // Drop if no match in check_ports
                 }
-
              }
-
         }
-/*
     }
-*/
-    }
-
 }
 
     /*********************  D E P A R S E R  ************************/
@@ -375,8 +323,8 @@ control IngressDeparser(packet_out pkt,
     /* Intrinsic */
     in    ingress_intrinsic_metadata_for_deparser_t  ig_dprsr_md)
 {
-    Checksum() ipv4_checksum;
-    apply {
+    Checksum() ipv4_checksum; // Initialize checksum func from tofino.p4
+    apply { // Update checksum with new ttl
         hdr.ipv4.hdrChecksum = ipv4_checksum.update(
                  {hdr.ipv4.version,
                  hdr.ipv4.ihl,
