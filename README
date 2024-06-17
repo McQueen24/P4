@@ -1,0 +1,269 @@
+Barefoot Networks P4 Studio Build Tool
+======================================
+
+P4 Studio Build is a tool that helps a user to install dependencies, build
+and install all the required components of P4 Studio (SDE), and build and
+install example P4 programs.
+
+The P4 Studio Build tool provides three different modes of invocation for the
+p4studio_build.py script:
+    1. Interactive mode (default)
+    2. Profile mode
+    3. Command line mode
+
+
+Interactive mode:
+-----------------
+In interactive mode, the P4 Studio Build tool queries the user for information
+about how the SDE will be used.  The answers provided may be saved into a
+configuration profile that can be reused when running in 'Profile' mode.
+The user may then indicate to build the SDE based on the provided information.
+
+Execution: ./p4studio_build.py
+
+
+Profile mode:
+-------------
+In profile mode, the P4 Studio Build tool builds the SDE based on a
+configuration profile provided by the user. A configuration profile contains
+the information about which components of SDE to build and any additional
+parameters that are required to build that component. The
+'sample_profile.yaml' file in $SDE/p4studio_build/profiles is an example
+template that includes all the components that could be built.
+
+Execution: ./p4studio_build.py --use-profile switch_p416_profile
+
+A few sample profiles are provided for reference.
+    1. all_profile.yaml            # builds all components and their dependencies
+    2. diags_profile.yaml          # builds diag and its dependencies
+    3. p414_examples_profile.yaml  # builds P4 14 examples and their dependencies
+    4. p416_examples_profile.yaml  # builds P4 16 examples and their dependencies
+    5. switch_p416_profile.yaml    # builds switch P4 16 and its dependencies
+    6. p4_runtime_profile.yaml     # builds switchd with native P4Runtime support
+    7. stratum_profile.yaml        # builds the SDE so it can be integrated with Stratum
+
+
+Command line mode:
+------------------
+In command line mode, the P4 Studio Build tool builds the SDE based on the
+arguments provided by the user. The arguments supported are as follows:
+    -up, --use-profile
+                          Specifies what configuration needs to be installed.
+                          DEFAULT: None
+                          USAGE: --use-profile example_profile
+
+    -bp, --build-profile
+                          Indicates to build a profile in interactive mode.
+                          USAGE: --build-profile
+
+    -sd, --skip-dependencies
+                          Specifies that no dependencies have to be installed.
+                          DEFAULT: False
+                          USAGE: --skip-dependencies
+
+    -sdc, --skip-dependencies-check
+                          Indicates to disable sanity dependency checks.
+                          DEFAULT: False
+                          USAGE: --skip-dependencies-check
+
+    -pco, --bf-platforms-configure-options
+                          Sepcifies additional configure options that needs to
+                          be passed for bf-platforms package. Typical
+                          DEFAULT: None
+                          USAGE:
+                          --bf-platforms-configure-options= "--with-tof-brgup-plat"
+
+    -b-path, --bsp-path
+                          Specifies the directory containing bf-reference-bsp
+                          (the BSP package path).
+                          This is required if bf-platforms needs to be installed.
+                          DEFAULT: None
+                          USAGE: --bsp-path .../path/to/bf-reference-bsp/
+
+    -d, --bf-diags
+                          Indicates to build the bf-diags package.
+                          USAGE: --bf-diags
+
+    -diags-co, --bf-diags-configure-options
+                          Specifies additional configure options that need to
+                          be passed to build bf-diags package.
+                          DEFAULT: None
+                          USAGE:
+                          --bf-diags-configure-options '--enable-thrift'
+
+    -sw, --switch
+                          Indicates to build switch-p4-16.
+                          DEFAULT: None
+                          USAGE: --switch,
+                                 --switch switch-p4-16
+
+    -sp, --switch-profile
+                          Indicates to build a specific profile of switch.
+                          DEFAULT: None
+                          USAGE: --switch-profile x1_tofino
+
+    -sw-co, --switch-configure-options
+                          Specifies additional configure options that need to
+                          be passed to build a switch package.
+                          DEFAULT: None
+                          USAGE: --switch-configure-options 'P4FLAGS=--create-graphs'
+
+    -e, --p4-examples
+                          Specifies which p4-examples to build.
+                          DEFAULT: None
+                          USAGE: --p4-examples p414 p416
+                                 --p4-examples p414
+                                 --p4-examples p416
+
+    -ta, --tofino-architecture
+                          Specifies the target device architecture to use.
+                          DEFAULT: tofino
+                          USAGE: --tofino-architecture tofino
+                                 --tofino-architecture tofino2
+                                 --tofino-architecture all
+
+    -sys-co, --bf-syslibs-configure-options
+                          Sepcifies additional configure options that need to
+                          be passed to build bf-syslibs package.
+                          USAGE: --bf-syslibs-configure-options= "--disable-tcmalloc"
+
+    -uco, --bf-utils-configure-options
+                          Sepcifies additional configure options that need to
+                          be passed to build bf-utils package.
+                          USAGE:
+                          --bf-utils-configure-options= "--disable-bf-python"
+
+    -dr-co, --bf-drivers-configure-options
+                          Specifies  additional configure options that need to
+                          be passed to build bf-drivers package.
+                          USAGE: --bf-drivers-configure-options= "--enable-p4rt"
+
+    -wk, --without-kdrv
+                          Indicates to not build with kernel drivers.
+                          DEFAULT: False
+                          USAGE: --without-kdrv
+
+    -rt, --bf-runtime
+                          Indicates that Barefoot P4 Runtime should be enabled.
+                          DEFAULT: False
+                          USAGE: --bf-runtime
+
+    -p4rt, --p4-runtime
+                          Indicates that native P4Runtime support should be enabled.
+                          DEFAULT: False
+                          USAGE: --p4-runtime
+
+    -pi, --pi             To be provided if needed to enable PI
+                          DEFAULT: False
+                          USAGE: --pi 
+ 
+    --grpc                Indicates that the Google RPC package should be enabled.
+                          DEFAULT: False
+                          USAGE: --grpc
+
+    -gco, --global-configure-options
+                          Specifies global configure options to use.
+                          DEFAULT: None
+                          USAGE: --global-configure-options '-host=i386-linux-gnu
+                                                             CFLAGS=-m32
+                                                             CXXFLAGS=-m32
+                                                             LDFLAGS=-m32'
+                          The above example is used to cross-compile the
+                          package libraries for a 32-bit i686 CPU based target.
+
+    -t, --thrift
+                          Indicates that Thrift should be enabled.
+                          DEFAULT: False
+                          USAGE: --thrift
+
+    -j, --jobs
+                          Specifies the number of jobs to run in parallel.
+                          DEFAULT: None
+                          USAGE: --jobs 8
+
+    -ptf, --ptf-modules
+                          Indicates that PTF dependencies and utilities should
+                          be installed.
+                          DEFAULT: False
+                          USAGE: --ptf-modules
+
+    -fa, --force-autogen
+                          Indicates that autogen.sh should be re-run.
+                          DEFAULT: False
+                          USAGE: --force-autogen
+
+    -scl, --skip-cleanup
+                          Indicates that install/build/log directories should
+                          not be cleaned.
+                          DEFAULT: False
+                          USAGE: --skip-cleanup
+
+    -soc, --skip-os-check
+                          Indicates to skip verifying that the current
+                          system has a supported OS.
+                          DEFAULT: False
+                          USAGE: --skip-os-check
+
+    -osd, --os-detail
+                          Specifies the OS to use as a baseline for dependency
+                          installation.
+                          DEFAULT: None
+                          USAGE: --os-detail Ubuntu_16.04
+                                 --os-detail Debian_9
+
+    -shc, --skip-kernelheader-check
+                          Indicates to skip the installation of kernel headers.
+                          DEFAULT: False
+                          USAGE: --skip-kernelheader-check
+
+    -bm, --build-modules
+                          Specifies the modules to be built.
+                          DEFAULT: None
+                          USAGE: --build-modules switch-p4-16
+                                 --build-modules bf-drivers bf-diags
+
+     -rb, --resume-build
+                          Indicates that the build will resume from the point
+                          it was last left off
+                          DEFAULT: False
+                          USAGE: --resume-build
+
+     -sdsc, --skip-diskspace-check
+                          Indicates to skip checking of the disk space.
+                          DEFAULT: False
+                          USAGE: --skip-diskspace-check
+
+     -iod, --install-only-dependencies
+                        To be provided to install only the dependencies
+                        required for a given profile.
+                        DEFAULT: False
+                        USAGE: -iod
+                               --install-only-dependencies
+     -kdir KDIR, --KDIR KDIR
+                        To be provided to build the kernel module, if building
+                        non-natively
+                        DEFAULT: None
+                        USAGE: --KDIR /lib/modules/4.4.0-83-generic/build
+     
+     -preserve_env, --preserve_env
+                        To be provided to use preset environment variables: SDE, SDE_INSTALL.
+                        DEFAULT: False
+                        USAGE: -preserve_env
+                               --preserve_env
+
+NOTE: If no command line argument is passed then the user enters interactive
+mode.
+NOTE: Command line options are also accepted in 'Profile' mode to further
+customize the installation.
+
+
+Manual Dependency Installation:
+-------------------------------
+If the user desires to manually install the dependencies required by the SDE,
+a convenient enumeration is provided in the dependencies.yaml file found in
+$SDE/p4studio_build.  Convenience utilities are also provided in
+$SDE/p4studio_build/third_party/install*.py to aid installing dependencies,
+which can be customized based on the user's chosen OS.
+
+The required third party source package dependencies are present under
+$SDE/p4studio_build/third_party.
