@@ -15,10 +15,8 @@ const int IPV4_HOST_SIZE = 65536;
 const int IPV4_LPM_SIZE  = 12288;
 
 #define BLOOM_FILTER_ENTRIES 4096
-#define BLOOM_FILTER_BIT_WIDTH 1
 
-/*typedef bit<9> egressSpec_t;
-*/
+//typedef bit<9> egressSpec_t;
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
 
@@ -30,10 +28,6 @@ struct user_metadata_t {
  ***********************  H E A D E R S  *********************************
  *************************************************************************/
 
-/*  Define all the headers the program will recognize             */
-/*  The actual sets of headers processed by each gress can differ */
-
-/* Standard ethernet header */
 header ethernet_h {
     bit<48>   dstAddr;
     bit<48>   srcAddr;
@@ -151,17 +145,24 @@ control Ingress(
     inout ingress_intrinsic_metadata_for_tm_t        ig_tm_md)
 {
 
-    Register<bit<BLOOM_FILTER_BIT_WIDTH>,_>(32w4096) bloom_filter_1; // WIDTH, DC, LENGTH, NAME
-    Register<bit<BLOOM_FILTER_BIT_WIDTH>,_>(BLOOM_FILTER_ENTRIES) bloom_filter_2;
-    bit<1> reg_val_one; bit<1> reg_val_two;
+    // define two registers to hold the bloom filters 
+    Register<bit<1>,_>(BLOOM_FILTER_ENTRIES) bloom_filter_1; // WIDTH, DONTCARE, LENGTH, NAME
+    Register<bit<1>,_>(BLOOM_FILTER_ENTRIES) bloom_filter_2; 
     bit<1> direction;
 
+    // hash functions used by the bloom filter
     Hash<bit<32>>(HashAlgorithm_t.CRC16) hash_10;
     Hash<bit<32>>(HashAlgorithm_t.CRC16) hash_11;
     Hash<bit<32>>(HashAlgorithm_t.CRC32) hash_20;
     Hash<bit<32>>(HashAlgorithm_t.CRC32) hash_21;
 
     @name(".bloom_filter1_get") RegisterAction<bit<1>,bit<32>,bit<1>>(bloom_filter_1) bloom_filter1_get = {
+        void apply(inout bit<1> value, out bit<1> ret) {
+            ret = value;
+        }
+    };
+
+    @name(".bloom_filter2_get") RegisterAction<bit<1>,bit<32>,bit<1>>(bloom_filter_2) bloom_filter2_get = {
         void apply(inout bit<1> value, out bit<1> ret) {
             ret = value;
         }
@@ -174,73 +175,23 @@ control Ingress(
         }
     };
 
-
-    @name(".bloom_filter2_get") RegisterAction<bit<1>,bit<32>, bit<1>>(bloom_filter_2) bloom_filter2_get = {
-        void apply(inout bit<1> value, out bit<1> ret) {
-            ret = value;
-        }
-    };
-
-    @name(".bloom_filter2_set") RegisterAction<bit<1>,bit<32>, bit<1>>(bloom_filter_2) bloom_filter2_set = {
+    @name(".bloom_filter2_set") RegisterAction<bit<1>,bit<32>,bit<1>>(bloom_filter_2) bloom_filter2_set = {
        void apply(inout bit<1> value, out bit<1> ret) {
             value = 1;
             ret = 0;
         }
     };
 
-    // action set_bloom_1_a() {
-    // //       bloom_filter1_set.execute(1);
-
-    //         bit<32> temp_s_1 = (bit<32>)(hash_10.get({  hdr.ipv4.srcAddr,
-    //                                                 hdr.ipv4.dstAddr,
-    //                                                 hdr.tcp.srcPort,
-    //                                                 hdr.tcp.dstPort,
-    //                                                 hdr.ipv4.protocol })[11:0]);
-    //         bloom_filter1_set.execute(temp_s_1);
-    // }
-
-    // action set_bloom_2_a() {
-    //         bit<32> temp_s_2 = (bit<32>)(hash_20.get({  hdr.ipv4.srcAddr,
-    //                                                 hdr.ipv4.dstAddr,
-    //                                                 hdr.tcp.srcPort,
-    //                                                 hdr.tcp.dstPort,
-    //                                                 hdr.ipv4.protocol })[11:0]);
-    //         bloom_filter2_set.execute(temp_s_2);
-    // }
-    // action get_bloom_1_a() {
-    //        bit<32> temp_g_1 = (bit<32>)(hash_11.get({   hdr.ipv4.dstAddr,
-    //                                                     hdr.ipv4.srcAddr,
-    //                                                     hdr.tcp.dstPort,
-    //                                                     hdr.tcp.srcPort,
-    //                                                     hdr.ipv4.protocol })[11:0]);
-    //         //reg_val_one = bloom_filter1_get.execute(temp_g_1);
-    //        meta.bloom_read_1 = bloom_filter1_get.execute(temp_g_1);
-    //        // reg_val_one = meta.bloom_read_1;
-    //        //meta.bloom_read_1 = bloom_filter1_get.execute(hash_11.get({hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort, hdr.ipv4.protocol }));
-    // }
-
-    // action get_bloom_2_a() {
-    //        bit<32> temp_g_2 = (bit<32>)(hash_21.get({   hdr.ipv4.dstAddr,
-    //                                                     hdr.ipv4.srcAddr,
-    //                                                     hdr.tcp.dstPort,
-    //                                                     hdr.tcp.srcPort,
-    //                                                     hdr.ipv4.protocol })[11:0]);
-    //        meta.bloom_read_2 = bloom_filter2_get.execute(temp_g_2);
-    // }
-
     action drop() {
         ig_dprsr_md.drop_ctl = 1;
     }
 
-    action ipv4_forward(macAddr_t dstMac, PortId_t port) {
+    action ipv4_forward(macAddr_t dstMac, PortId_t port) { 
         hdr.ethernet.dstAddr = dstMac;
         ig_tm_md.ucast_egress_port = port;
-        // ip4Addr_t temp = hdr.ipv4.srcAddr;
-        // hdr.ipv4.srcAddr = hdr.ipv4.dstAddr;
-        // hdr.ipv4.dstAddr = temp;
     }
 
-    action set_direction(bit<1> dir) {
+    action set_direction(bit<1> dir) { 
         direction = dir;
     }
 
@@ -251,6 +202,7 @@ control Ingress(
         size = 1024;
     }
 
+    /* Table to determine whether the packet is incoming or outgoing, based on ports used */
     table check_ports {
         key = {
             ig_intr_md.ingress_port : range;
@@ -276,34 +228,27 @@ control Ingress(
 
                 if (check_ports.apply().hit) {
 
-                    // Packet comes from internal network
-                    if (direction == 0) {
+                    
+                    if (direction == 0) { // Packet comes from internal network
 
-                        // if syn update bloom filter and add entry
-                        if (hdr.tcp.syn == 1) {
-                            //set_bloom_1_a(); // actions probably has to be called through a table
-                            //set_bloom_2_a(); // --||--
-                            bit<32> temp10 = (bit<32>)(hash_10.get({hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort, hdr.ipv4.protocol })[11:0]);
-                            bit<32> temp20 = (bit<32>)(hash_20.get({hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort, hdr.ipv4.protocol })[11:0]);
-                            bloom_filter1_set.execute(temp10);
-                            bloom_filter2_set.execute(temp20);
+                        if (hdr.tcp.syn == 1) { // if syn update bloom filter and add entry
+                            bit<32> index1 = (bit<32>)(hash_10.get({hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort, hdr.ipv4.protocol })[11:0]);
+                            bit<32> index2 = (bit<32>)(hash_20.get({hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort, hdr.ipv4.protocol })[11:0]);
+                            bloom_filter1_set.execute(index1);
+                            bloom_filter2_set.execute(index2);
                         }
                     }
 
-                    // Packet comes from outside
-                    else if (direction == 1) {
+                    else if (direction == 1) { // Packet comes from outside
 
                         // Read bloom filters to check for 1's
-                        //get_bloom_1_a(); // actions probably has to be called from table
-                        //get_bloom_2_a(); // --||--
-                        bit<32> temp11 = (bit<32>)(hash_11.get({hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort, hdr.ipv4.protocol })[11:0]);
-                        bit<32> temp21 = (bit<32>)(hash_21.get({hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort, hdr.ipv4.protocol })[11:0]);
-                        meta.bloom_read_1 = bloom_filter1_get.execute(temp11);
-                        meta.bloom_read_2 = bloom_filter2_get.execute(temp21);
-
+                        bit<32> index1 = (bit<32>)(hash_11.get({hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort, hdr.ipv4.protocol })[11:0]);
+                        bit<32> index2 = (bit<32>)(hash_21.get({hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort, hdr.ipv4.protocol })[11:0]);
+                        meta.bloom_read_1 = bloom_filter1_get.execute(index1);
+                        meta.bloom_read_2 = bloom_filter2_get.execute(index2);
 
                         if (meta.bloom_read_1 != 1 || meta.bloom_read_2 != 1) {
-                            drop(); // drop packet if value hash index != 1
+                            drop(); // drop packet if it's not in the bloom filter
                         }
                     }
                 } else {
