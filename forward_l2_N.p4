@@ -240,6 +240,8 @@ control Ingress(
 
              if (hdr.ipv4.ttl > 0) {
                 hdr.ipv4.ttl = hdr.ipv4.ttl - 1; // decrease TTL
+             } else {
+                drop();
              }
 
              if (hdr.tcp.isValid()) {
