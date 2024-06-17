@@ -114,7 +114,6 @@ parser IngressParser(packet_in        pkt,
             ETHERTYPE_IPV4: parse_ipv4;
             default: accept;
         }
-
     }
 
     state parse_ipv4 {
@@ -129,7 +128,6 @@ parser IngressParser(packet_in        pkt,
         pkt.extract(hdr.tcp);
         transition accept;
     }
-
 }
 
     /***************** M A T C H - A C T I O N  *********************/
@@ -146,7 +144,7 @@ control Ingress(
 {
 
     // define two registers to hold the bloom filters 
-    Register<bit<1>,_>(BLOOM_FILTER_ENTRIES) bloom_filter_1; // WIDTH, DONTCARE, LENGTH, NAME
+    Register<bit<1>,_>(BLOOM_FILTER_ENTRIES) bloom_filter_1; // [format of individual entries], [index size (DONTCARE)], [number of entries], [name]
     Register<bit<1>,_>(BLOOM_FILTER_ENTRIES) bloom_filter_2; 
     bit<1> direction;
 
@@ -220,8 +218,10 @@ control Ingress(
         if (hdr.ipv4.isValid()) {
              ipv4_lpm.apply();
 
-             if (hdr.ipv4.ttl > 0) {
+             if (hdr.ipv4.ttl > 1) {
                 hdr.ipv4.ttl = hdr.ipv4.ttl - 1; // decrease TTL
+             } else {
+                drop(); 
              }
 
              if (hdr.tcp.isValid()) {
@@ -284,11 +284,6 @@ control IngressDeparser(packet_out pkt,
                  hdr.ipv4.dstAddr});
 
         pkt.emit(hdr);
-        /*
-        pkt.emit(hdr.ethernet);
-        pkt.emit(hdr.ipv4);
-        pkt.emit(hdr.tcp);
-        */
     }
 }
 
@@ -367,7 +362,7 @@ control EgressDeparser(packet_out pkt,
 
 
 /************ F I N A L   P A C K A G E ******************************/
-Pipeline(
+Pipeline( // define a pipeline consisting of the individual control blocks and in which order
     IngressParser(),
     Ingress(),
     IngressDeparser(),
@@ -376,4 +371,4 @@ Pipeline(
     EgressDeparser()
 ) pipe;
 
-Switch(pipe) main;
+Switch(pipe) main; // make sure the switch uses the defined pipeline
