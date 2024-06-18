@@ -183,14 +183,16 @@ control Ingress(
     };
 
 
-    // action set_bloom_1_a() {
+    action set_bloom_1_a() {
+         bit<32> index1 = (bit<32>)(hash_10.get({hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort, hdr.ipv4.protocol })[11:0]);
+         bloom_filter1_set.execute(index1);
     //         bit<32> temp_s_1 = (bit<32>)(hash_10.get({  hdr.ipv4.srcAddr,
     //                                                 hdr.ipv4.dstAddr,
     //                                                 hdr.tcp.srcPort,
     //                                                 hdr.tcp.dstPort,
     //                                                 hdr.ipv4.protocol })[11:0]);
     //         bloom_filter1_set.execute(temp_s_1);
-    // }
+    }
 
     action drop() {
         ig_dprsr_md.drop_ctl = 1;
@@ -226,23 +228,19 @@ control Ingress(
         size = 1024;
     }
 
-    // table set_bloom_1_t {
-    //       actions = {
-    //               set_bloom_1_a;
-    //       }
-    //       default_action = set_bloom_1_a;
-    //       size = 1;
-    // }
+    table set_bloom_1_t {
+          actions = {
+                  set_bloom_1_a;
+          }
+          const default_action = set_bloom_1_a;
+          size = 1;
+    }
 
     apply {
         if (hdr.ipv4.isValid()) {
-             ipv4_lpm.apply();
-
-             if (hdr.ipv4.ttl > 0) {
+             if (hdr.ipv4.ttl > 1) {
                 hdr.ipv4.ttl = hdr.ipv4.ttl - 1; // decrease TTL
-             } else {
-                drop();
-             }
+                ipv4_lpm.apply();
 
              if (hdr.tcp.isValid()) {
 
@@ -276,6 +274,9 @@ control Ingress(
                   drop(); // Drop if no match in check_ports
                 }
              }
+             } else {
+               drop();
+            }
         }
     }
 }
