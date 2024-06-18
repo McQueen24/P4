@@ -194,7 +194,7 @@ control Ingress(
     }
 
     table ipv4_lpm {
-        key     =  { hdr.ipv4.dstAddr : exact; }
+        key     =  { hdr.ipv4.dstAddr : lpm; }
         actions =  { ipv4_forward; drop; NoAction; }
         const default_action = drop;
         size = 1024;
@@ -216,15 +216,15 @@ control Ingress(
 
     apply {
         if (hdr.ipv4.isValid()) {
-             ipv4_lpm.apply();
+            ipv4_lpm.apply();
 
-             if (hdr.ipv4.ttl > 1) {
+            if (hdr.ipv4.ttl > 1) {
                 hdr.ipv4.ttl = hdr.ipv4.ttl - 1; // decrease TTL
-             } else {
-                drop(); 
-             }
+            } else {
+                drop();
+            }
 
-             if (hdr.tcp.isValid()) {
+            if (hdr.tcp.isValid()) {
 
                 if (check_ports.apply().hit) {
 
@@ -306,8 +306,7 @@ struct my_egress_headers_t {
 
     /********  G L O B A L   E G R E S S   M E T A D A T A  *********/
 
-struct my_egress_metadata_t {
-}
+struct my_egress_metadata_t {}
 
     /***********************  P A R S E R  **************************/
 
