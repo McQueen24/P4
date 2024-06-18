@@ -114,7 +114,6 @@ parser IngressParser(packet_in        pkt,
             ETHERTYPE_IPV4: parse_ipv4;
             default: accept;
         }
-
     }
 
     state parse_ipv4 {
@@ -129,7 +128,6 @@ parser IngressParser(packet_in        pkt,
         pkt.extract(hdr.tcp);
         transition accept;
     }
-
 }
 
     /***************** M A T C H - A C T I O N  *********************/
@@ -146,7 +144,7 @@ control Ingress(
 {
 
     // define two registers to hold the bloom filters 
-    Register<bit<1>,_>(BLOOM_FILTER_ENTRIES) bloom_filter_1; // WIDTH, DONTCARE, LENGTH, NAME
+    Register<bit<1>,_>(BLOOM_FILTER_ENTRIES) bloom_filter_1; // [format of individual entries], [index size (DONTCARE)], [number of entries], [name]
     Register<bit<1>,_>(BLOOM_FILTER_ENTRIES) bloom_filter_2; 
     bit<1> direction;
 
@@ -182,18 +180,6 @@ control Ingress(
         }
     };
 
-
-    action set_bloom_1_a() {
-         bit<32> index1 = (bit<32>)(hash_10.get({hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort, hdr.ipv4.protocol })[11:0]);
-         bloom_filter1_set.execute(index1);
-    //         bit<32> temp_s_1 = (bit<32>)(hash_10.get({  hdr.ipv4.srcAddr,
-    //                                                 hdr.ipv4.dstAddr,
-    //                                                 hdr.tcp.srcPort,
-    //                                                 hdr.tcp.dstPort,
-    //                                                 hdr.ipv4.protocol })[11:0]);
-    //         bloom_filter1_set.execute(temp_s_1);
-    }
-
     action drop() {
         ig_dprsr_md.drop_ctl = 1;
     }
@@ -228,21 +214,17 @@ control Ingress(
         size = 1024;
     }
 
-    table set_bloom_1_t {
-          actions = {
-                  set_bloom_1_a;
-          }
-          const default_action = set_bloom_1_a;
-          size = 1;
-    }
-
     apply {
         if (hdr.ipv4.isValid()) {
-             if (hdr.ipv4.ttl > 1) {
-                hdr.ipv4.ttl = hdr.ipv4.ttl - 1; // decrease TTL
-                ipv4_lpm.apply();
+            ipv4_lpm.apply();
 
-             if (hdr.tcp.isValid()) {
+            if (hdr.ipv4.ttl > 1) {
+                hdr.ipv4.ttl = hdr.ipv4.ttl - 1; // decrease TTL
+            } else {
+                drop();
+            }
+
+            if (hdr.tcp.isValid()) {
 
                 if (check_ports.apply().hit) {
 
@@ -250,7 +232,6 @@ control Ingress(
                     if (direction == 0) { // Packet comes from internal network
 
                         if (hdr.tcp.syn == 1) { // if syn update bloom filter and add entry
-                            // set_bloom_1_t.apply();
                             bit<32> index1 = (bit<32>)(hash_10.get({hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort, hdr.ipv4.protocol })[11:0]);
                             bit<32> index2 = (bit<32>)(hash_20.get({hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort, hdr.ipv4.protocol })[11:0]);
                             bloom_filter1_set.execute(index1);
@@ -274,9 +255,6 @@ control Ingress(
                   drop(); // Drop if no match in check_ports
                 }
              }
-             } else {
-               drop();
-            }
         }
     }
 }
@@ -306,11 +284,6 @@ control IngressDeparser(packet_out pkt,
                  hdr.ipv4.dstAddr});
 
         pkt.emit(hdr);
-        /*
-        pkt.emit(hdr.ethernet);
-        pkt.emit(hdr.ipv4);
-        pkt.emit(hdr.tcp);
-        */
     }
 }
 
@@ -333,8 +306,7 @@ struct my_egress_headers_t {
 
     /********  G L O B A L   E G R E S S   M E T A D A T A  *********/
 
-struct my_egress_metadata_t {
-}
+struct my_egress_metadata_t {}
 
     /***********************  P A R S E R  **************************/
 
@@ -389,7 +361,7 @@ control EgressDeparser(packet_out pkt,
 
 
 /************ F I N A L   P A C K A G E ******************************/
-Pipeline(
+Pipeline( // define a pipeline consisting of the individual control blocks and in which order
     IngressParser(),
     Ingress(),
     IngressDeparser(),
@@ -398,4 +370,4 @@ Pipeline(
     EgressDeparser()
 ) pipe;
 
-Switch(pipe) main;
+Switch(pipe) main; // make sure the switch uses the defined pipeline
