@@ -152,7 +152,7 @@ iperf -c 192.168.100.225 -B 192.168.100.100 -t 5
 
 
 TRANSFER <filename> TO TOP LEVEL OS:
-scp <filename>.p4 root@10.51.49.152:/root/<>.p4
+scp <filename>.p4 root@10.51.49.239:/root/<>.p4
 
 
 SEARCH FOR STRINGS IN root@localhost:~/bf-sde-9.2.0/install/share/p4c/p4include#
