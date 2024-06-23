@@ -1,0 +1,132 @@
++---------------------------------------------------------------------+
+|  Log file: mau.characterize.log                                     |
+|  Compiler version: 9.2.0                                            |
+|  Created on: Thu May 30 12:38:04 2024                               |
+|  Run ID: e4918ee1681d41a6                                           |
++---------------------------------------------------------------------+
+
+Match+Action Resource Usage
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|              1               |    2    |   3    |    4    |  5   |        6        |   7   |         8         |      9       |    10   |   11  |          12         |      13      |     14    |      15      |   16   |     17    |       18      |      19      |    20   |       21      |    22   |
+|            Table             |   Dir   | Stage  |    P4   | Mem  |      Total      | Total |       Table       |    Match     |   TCAM  |  SRAM |        Match        |     Imm.     |    TCAM   |     SRAM     |   P4   |   Action  |     Ideal     |    Actual    |   TCAM  |      SRAM     |   SRAM  |
+|             Name             |         |        |  Lookup | Type |      SRAMs      | TCAMs |      Entries      |     Bits     |  Over-  | Over- |       Overhead      |    Action    |    Bits   |     Bits     | Action |    Bits   |     Match     |    Match     |  Match  |     Match     |  Action |
+|                              |         |        | Type(s) |      | TOT(M/A/S/MT/I) |       |     Requested     |     Per      |   head  |  head |      Structure      |     Data     |    Per    |     Per      |  Bits  |    Per    |    Entries-   |   Entries-   | Packing |    Packing    | Packing |
+|                              |         |        |         |      |     (legend     |       |         /         |    Entry     |   Bits  |  Bits | NT/AI/AD/M/S/SL/V/I |      in      |   Entry   |    Entry     |        |   Entry   |     Number    |    Number    |   Eff.  |      Eff.     |   Eff.  |
+|                              |         |        |         |      |      below)     |       |     Allocated     |  R/A(diff)   |   Per   |  Per  |       (legend       |   Overhead   | R/A(diff) |  R/A(diff)   |        | R/A(diff) |      Per      |     Per      |  Ideal/ |     Ideal/    |  Ideal/ |
+|                              |         |        |         |      |                 |       |       (diff)      |              |  Entry  | Entry |        below)       |  R/A(diff)   |           |              |        |           |     Memory    |    Memory    |  Actual |     Actual    |  Actual |
+|                              |         |        |         |      |                 |       |                   |              | ver/vld |       |                     |              |           |              |        |           |     Units     |    Units     |         |               |         |
+|                              |         |        |         |      |                 |       |                   |              |         |       |                     |              |           |              |        |           |     (bits)    |    (bits)    |         |               |         |
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| IngressParser.$PORT_METADATA | ingress | parser |  exact  | buf  |  0 (0/0/0/0/0)  |   0   |   288 / 288 (0)   |  9 / 0 (-9)  |    0    |   0   |   0/0/0/0/0/0/0/0   | 64 / 0 (-64) | 0 / 0 (0) |  0 / 0 (0)   |   64   | 0 / 0 (0) |  1 in 2 (128) | 1 in 1 (64)  |  - / -  |     - / -     |  - / -  |
+|                              |         |        |         |      |                 |       |                   |              |         |       |                     |              |           |              |        |           |               |              |         |               |         |
+|      Ingress.forward_l2      | ingress |   0    |  exact  | sram |  6 (6/0/0/0/0)  |   0   | 12288 / 12288 (0) | 48 / 40 (-8) |    0    |   13  |   0/0/0/0/0/0/4/9   |  9 / 9 (0)   | 0 / 0 (0) | 61 / 53 (-8) |   9    | 0 / 0 (0) | 11 in 5 (640) | 2 in 1 (128) |  - / -  | 98.0% / 73.4% |  - / -  |
+|        stage 0 totals        |    -    |   -    |    -    |  -   |  6 (6/0/0/0/0)  |   0   |         -         |      -       |    -    |   -   |          -          |      -       |     -     |      -       |   -    |     -     |       -       |      -       |    -    |       -       |    -    |
+|                              |         |        |         |      |                 |       |                   |              |         |       |                     |              |           |              |        |           |               |              |         |               |         |
+|        overall totals        |    -    |   -    |    -    |  -   |  6 (6/0/0/0/0)  |   0   |         -         |      -       |    -    |   -   |          -          |      -       |     -     |      -       |   -    |     -     |       -       |      -       |    -    |       -       |    -    |
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Total SRAMs Legend:
+TOT (M/A/S/MT/I)
+TOT = Total
+M = Match
+A = Action
+S = Statistics
+MT = Meter / Stateful / Selection
+I = Ternary Indirection
+
+Match Overhead Structure Legend:
+NT/AI/AD/M/S/SL/V/I
+NT = Next Table Pointer
+AI = Action Instruction Pointer
+AD = Action Data Pointer
+M = Meter/Selection/Stateful Pointer
+S = Statistics Pointer
+SL = Selection Length
+V = Entry Version
+I = Immediate Action Data
+
+
+
+
+
++----------------------------------------------------------------+
+    OVERHEAD STRUCTURES
++----------------------------------------------------------------+
+
++----------------------------------------------------------------+
+   Ingress.forward_l2
++----------------------------------------------------------------+
+Match Overhead:
+  Field --version_valid-- [3:0] (4 bits)
+  Field --immediate-- [8:0] (9 bits)
+
+  Total bits: 13
++----------------------------------------------------------------+
+   IngressParser.$PORT_METADATA
++----------------------------------------------------------------+
+Match Overhead:
+
+  Total bits: 0
+
+
+
+
+
++----------------------------------------------------------------+
+    MATCH AND ACTION FORMATS
++----------------------------------------------------------------+
+
++----------------------------------------------------------------+
+  Ingress.forward_l2
++----------------------------------------------------------------+
++------------------------------------------------+
+   Match format for Ingress.forward_l2
++------------------------------------------------+
+Stage 0:
+Pack Format:
+  table_word_width: 128
+  memory_word_width: 128
+  entries_per_table_word: 2
+  number_memory_units_per_table_word: 1
+  entry_list: [
+    entry_number : 1
+    field_list : [
+       Field action [1:0]                    : in bits [3:2]
+       Field immediate [8:0]                 : in bits [21:13]
+       Field version [3:0]                   : in bits [119:116]
+       Field hdr.ethernet.dst_addr [15:10]   : in bits [111:106]
+       Field hdr.ethernet.dst_addr [23:16]   : in bits [79:72]
+       Field hdr.ethernet.dst_addr [31:24]   : in bits [87:80]
+       Field hdr.ethernet.dst_addr [39:32]   : in bits [95:88]
+       Field hdr.ethernet.dst_addr [47:40]   : in bits [103:96]
+    ]
+    entry_number : 0
+    field_list : [
+       Field action [1:0]                    : in bits [1:0]
+       Field immediate [8:0]                 : in bits [12:4]
+       Field version [3:0]                   : in bits [115:112]
+       Field hdr.ethernet.dst_addr [15:10]   : in bits [71:66]
+       Field hdr.ethernet.dst_addr [23:16]   : in bits [39:32]
+       Field hdr.ethernet.dst_addr [31:24]   : in bits [47:40]
+       Field hdr.ethernet.dst_addr [39:32]   : in bits [55:48]
+       Field hdr.ethernet.dst_addr [47:40]   : in bits [63:56]
+    ]
+  ]
++----------------------------------------------------------------+
+  IngressParser.$PORT_METADATA
++----------------------------------------------------------------+
++------------------------------------------------+
+   Match format for IngressParser.$PORT_METADATA
++------------------------------------------------+
+Stage -1:
+Pack Format:
+  table_word_width: 64
+  memory_word_width: 64
+  entries_per_table_word: 1
+  number_memory_units_per_table_word: 1
+  entry_list: [
+    entry_number : 0
+    field_list : [
+       Field ig_intr_md [63:0]   : in bits [63:0]
+    ]
+  ]

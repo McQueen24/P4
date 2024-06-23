@@ -1,0 +1,57 @@
+spill extract constant 1 to PHV-allocated ingress::hdr.tcp.$valid; { (ran out of extractors) }
+created split state ingress parser state ingress::parse_tcp.$split_0:
+computed max shift = 160 for split iteration 0 of ingress::parse_tcp
+no need to split ingress::parse_tcp.$split_0 (nothing spilled)
+ingress::parse_tcp is split into 2 states:
+  ingress::parse_tcp
+  ingress::parse_tcp.$split_0
+spill extract inbuf bit[128..159] to PHV-allocated ingress::hdr.ipv4.dstAddr; { (ran out of extractors) }
+created split state ingress parser state ingress::parse_ipv4.$split_0:
+computed max shift = 128 for split iteration 0 of ingress::parse_ipv4
+no need to split ingress::parse_ipv4.$split_0 (nothing spilled)
+ingress::parse_ipv4 is split into 2 states:
+  ingress::parse_ipv4
+  ingress::parse_ipv4.$split_0
+no need to split ingress::start (nothing spilled)
+no need to split ingress::$entry_point (nothing spilled)
+no need to split $entry_point.start (nothing spilled)
+created 0 coalesced groups:
+try allocating top down:
+top down allocation successful!
+created 2 coalesced groups:
+group 0: {  [ ingress::start : inbuf bit[224..239] hdr.ethernet/ethernet.ether_type; ] }
+group 1: {  [ ingress::parse_ipv4.$split_0 : inbuf bit[-56..-49] hdr.ipv4/ipv4.protocol; ] }
+try allocating top down:
+>>>>>>>>>>>>>>>>
+allocating {  [ ingress::start : inbuf bit[224..239] hdr.ethernet/ethernet.ether_type; ] }
+try def set 0
+available regs are:
+half
+byte0
+byte1
+allocated { $half } to {  [ ingress::start : inbuf bit[224..239] hdr.ethernet/ethernet.ether_type; ] }
+success
+<<<<<<<<<<<<<<<<
+>>>>>>>>>>>>>>>>
+allocating {  [ ingress::parse_ipv4.$split_0 : inbuf bit[-56..-49] hdr.ipv4/ipv4.protocol; ] }
+try def set 0
+available regs are:
+half
+byte0
+byte1
+allocated { $byte1 } to {  [ ingress::parse_ipv4.$split_0 : inbuf bit[-56..-49] hdr.ipv4/ipv4.protocol; ] }
+success
+<<<<<<<<<<<<<<<<
+top down allocation successful!
+meta_opt: 8191
+meta_size: 27
+H0 contains intrinsic invalidate fields
+parser init B1
+parser init B4
+parser init H3
+parser init H6
+parser init H4
+parser init H5
+parser init H7
+parser init H8
+H16 contains intrinsic invalidate fields

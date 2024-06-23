@@ -1,0 +1,105 @@
+FindDependencyGraph : After Instruction Selection
+ingress: [973691]
+  cond-2(ingress::hdr.ethernet.$valid == 1; => $true, 1 => $false)
+    $true: [973717]
+      forward_l2_0
+egress: [962800]
+
+    Maximum stage number according to dependences: 
+      INGRESS: 0
+      EGRESS: -1
+GRAPH
+    cond-2 -- CONTROL_COND_TRUE --> forward_l2_0
+MIN STAGE INFO
+    Each table also indicates its dependency chain length
+ Stage #0
+     cond-2 0
+     forward_l2_0 0
+	- Edge CONTROL_COND_TRUE cond-2
+
+FindDependencyGraph : Just Before PHV allocation
+ingress: [973691]
+  cond-2(ingress::hdr.ethernet.$valid == 1; => $true, 1 => $false)
+    $true: [973717]
+      forward_l2_0
+egress: [962800]
+
+    Maximum stage number according to dependences: 
+      INGRESS: 0
+      EGRESS: -1
+GRAPH
+    cond-2 -- CONTROL_COND_TRUE --> forward_l2_0
+MIN STAGE INFO
+    Each table also indicates its dependency chain length
+ Stage #0
+     cond-2 0
+     forward_l2_0 0
+	- Edge CONTROL_COND_TRUE cond-2
+
+ingress: [989568]
+  cond-2(ingress::hdr.ethernet.$valid == 1; => $true, 1 => $false)
+    $true: [989594]
+      forward_l2_0{ E 38+1, 2 12K }
+egress: [962800]
+
+    Maximum stage number according to dependences: 
+      INGRESS: 0
+      EGRESS: -1
+GRAPH
+    cond-2 -- CONTROL_COND_TRUE --> forward_l2_0
+MIN STAGE INFO
+    Each table also indicates its dependency chain length
+ Stage #0
+     cond-2 0
+     forward_l2_0 0
+	- Edge CONTROL_COND_TRUE cond-2
+
+FindDependencyGraph : Before Table Placement
+ingress: [989568]
+  cond-2(ingress::hdr.ethernet.$valid == 1; => $true, 1 => $false)
+    $true: [989594]
+      forward_l2_0{ E 38+1, 2 12K }
+egress: [962800]
+
+    Maximum stage number according to dependences: 
+      INGRESS: 0
+      EGRESS: -1
+GRAPH
+    cond-2 -- CONTROL_COND_TRUE --> forward_l2_0
+MIN STAGE INFO
+    Each table also indicates its dependency chain length
+ Stage #0
+     cond-2 0
+     forward_l2_0 0
+	- Edge CONTROL_COND_TRUE cond-2
+
+FindDependencyGraph : After Table Placement
+ingress: [990095]
+  0: forward_l2_0(ingress::hdr.ethernet.$valid == 1;, 1 => $false){ GE 38+10, 2 [1x2 4K 4K 2K 2K] }
+    $false: [990102]
+egress: [962800]
+
+    Maximum stage number according to dependences: 
+      INGRESS: 0
+      EGRESS: -1
+GRAPH
+MIN STAGE INFO
+    Each table also indicates its dependency chain length
+ Stage #0
+     forward_l2_0 0
+
+FindDependencyGraph : Power Calculation
+ingress: [990095]
+  0: forward_l2_0(ingress::hdr.ethernet.$valid == 1;, 1 => $false){ GE 38+10, 2 [1x2 4K 4K 2K 2K] }
+    $false: [990102]
+egress: [962800]
+
+    Maximum stage number according to dependences: 
+      INGRESS: 0
+      EGRESS: -1
+GRAPH
+MIN STAGE INFO
+    Each table also indicates its dependency chain length
+ Stage #0
+     forward_l2_0 0
+

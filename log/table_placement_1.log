@@ -1,0 +1,31 @@
+Table Placement ignores container conflicts? 0
+table placement starting pipe
+ingress: [989568]
+  cond-2(ingress::hdr.ethernet.$valid == 1; => $true, 1 => $false)
+    $true: [989594]
+      forward_l2_0{ E 38+1, 2 12K }
+egress: [962800]
+
+stage 0, work: [ 989568 ], partly placed 0, placed 0
+    { id=0 ram=0 tcam=0 mram=0 eixb=0 tixb=0 malu=0 salu=0 }
+  Group table: cond-2
+try_place_table(cond-2, stage=0)
+  Merging with match table forward_l2_0
+  Initial stage is 0, initial entries is 12288
+  Selected stage: 0    Furthest stage: 0
+  try_place_table returning 12288 of forward_l2_0 in stage 0
+    Pl vector: [ forward_l2_0 ]
+found 1 tables that could be placed: [ forward_l2_0 ]
+    Updating best to first table seen: forward_l2_0
+placing 12288 entries of forward_l2_0 (with gw cond-2) in stage 0(0)
+Table placement placed 1 tables in 1 stages
+  Table forward_l2_0 logical id 0x0 entries=12288
+  Gateway cond-2 is also logical id 0x0
+Finished table placement decisions pipe
+folding gateway cond-2 onto forward_l2_0
+table placement completed pipe
+ingress: [990095]
+  0: forward_l2_0(ingress::hdr.ethernet.$valid == 1;, 1 => $false){ GE 38+10, 2 [1x2 4K 4K 2K 2K] }
+    $false: [990102]
+egress: [962800]
+
